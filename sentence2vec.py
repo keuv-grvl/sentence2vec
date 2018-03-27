@@ -66,13 +66,13 @@ def sentence_to_vec(sentence_list: List[Sentence], embedding_size: int, a: float
 
     # pad the vector?  (occurs if we have less sentences than embeddings_size)
     if len(u) < embedding_size:
-        for i in range(embedding_size - len(u)):
+        for _ in range(embedding_size - len(u)):
             u = np.append(u, 0)  # add needed extension for multiplication below
 
     # resulting sentence vectors, vs = vs -u x uT x vs
     sentence_vecs = []
     for vs in sentence_set:
-        sub = np.multiply(u,vs)
+        sub = np.multiply(u, vs)
         sentence_vecs.append(np.subtract(vs, sub))
 
     return sentence_vecs
