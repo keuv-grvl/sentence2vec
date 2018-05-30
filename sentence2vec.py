@@ -46,9 +46,11 @@ def get_word_frequency(word_text):
 # Sanjeev Arora, Yingyu Liang, Tengyu Ma
 # Princeton University
 # convert a list of sentence with word2vec items into a set of sentence vectors
-def sentence_to_vec(sentence_list: List[Sentence], embedding_size: int, a: float=1e-3):
+def sentence_to_vec(sentence_list: List[Sentence], embedding_size: int, a: float=1e-3, debug=False):
+    if debug: print("[DEBUG] sentence_to_vec")
     sentence_set = []
-    for sentence in sentence_list:
+    for i, sentence in enumerate(sentence_list):
+        if debug: print(f"Progress: {i}/{len(sentence_list)}", end="\r")
         vs = np.zeros(embedding_size)  # add all word2vec values into one vector for the sentence
         sentence_length = sentence.len()
         for word in sentence.word_list:
@@ -58,18 +60,22 @@ def sentence_to_vec(sentence_list: List[Sentence], embedding_size: int, a: float
         vs = np.divide(vs, sentence_length)  # weighted average
         sentence_set.append(vs)  # add to our existing re-calculated set of sentences
 
+    if debug: print()
     # calculate PCA of this sentence set
+    if debug: print("[DEBUG] Compution PCA (1/3)")
     pca = PCA(n_components=embedding_size)
     pca.fit(np.array(sentence_set))
     u = pca.components_[0]  # the PCA vector
     u = np.multiply(u, np.transpose(u))  # u x uT
 
     # pad the vector?  (occurs if we have less sentences than embeddings_size)
+    if debug: print("[DEBUG] Padding vector (2/3)")
     if len(u) < embedding_size:
         for _ in range(embedding_size - len(u)):
             u = np.append(u, 0)  # add needed extension for multiplication below
 
     # resulting sentence vectors, vs = vs -u x uT x vs
+    if debug: print("[DEBUG] Building final vectors (3/3)")
     sentence_vecs = []
     for vs in sentence_set:
         sub = np.multiply(u, vs)
