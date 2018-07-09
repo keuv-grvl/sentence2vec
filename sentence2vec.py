@@ -56,14 +56,17 @@ def sentence_to_vec(
     """
     if debug:
         print("[DEBUG] sentence_to_vec")
+
     sentence_set = []
     for i, sentence in enumerate(sentence_list):
         if debug:
             print(f"Progress: {i}/{len(sentence_list)}", end="\r")
+
         vs = np.zeros(
             embedding_size
         )  # add all word2vec values into one vector for the sentence
         sentence_length = sentence.len()
+
         for word in sentence.word_list:
             a_value = a / (
                 a + get_word_frequency(word.text)
@@ -71,7 +74,7 @@ def sentence_to_vec(
             vs = np.add(
                 vs, np.multiply(a_value, word.vector)
             )  # vs += sif * word_vector
-        vs = np.divide(vs, sentence_length)  # weighted average
+        vs /= sentence_length  # weighted average
         sentence_set.append(vs)  # add to our existing re-calculated set of sentences
 
     sentence_set = np.array(sentence_set)
@@ -82,7 +85,7 @@ def sentence_to_vec(
 
     # calculate PCA of this sentence set
     if debug:
-        print("[DEBUG] Compution PCA (1/3)")
+        print("[DEBUG] Computing PCA (1/3)")
 
     pca = PCA(n_components=embedding_size)
     pca.fit(np.array(sentence_set))
