@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 #
 #  Copyright 2016 Peter de Vocht
@@ -20,15 +20,17 @@ from sklearn.decomposition import PCA
 from typing import List
 
 
-# an embedding word with associated vector
 class Word:
+    """An embedding word with associated vector"""
+
     def __init__(self, text, vector):
         self.text = text
         self.vector = vector
 
 
-# a sentence, a list of words
 class Sentence:
+    """A sentence, a list of words"""
+
     def __init__(self, word_list):
         self.word_list = word_list
 
@@ -37,48 +39,67 @@ class Sentence:
         return len(self.word_list)
 
 
-# todo: get the frequency for a word in a document set
 def get_word_frequency(word_text):
+    """todo: get the frequency for a word in a document set"""
     return 1.0
 
 
-# A SIMPLE BUT TOUGH TO BEAT BASELINE FOR SENTENCE EMBEDDINGS
-# Sanjeev Arora, Yingyu Liang, Tengyu Ma
-# Princeton University
-# convert a list of sentence with word2vec items into a set of sentence vectors
-def sentence_to_vec(sentence_list: List[Sentence], embedding_size: int, a: float=1e-3, debug=False):
-    if debug: print("[DEBUG] sentence_to_vec")
+def sentence_to_vec(
+    sentence_list: List[Sentence], embedding_size: int, a: float = 1e-3, debug=False
+):
+    """
+    Convert a list of sentence with word2vec items into a set of sentence vectors
+
+    A SIMPLE BUT TOUGH TO BEAT BASELINE FOR SENTENCE EMBEDDINGS
+    Sanjeev Arora, Yingyu Liang, Tengyu Ma
+    Princeton University
+    """
+    if debug:
+        print("[DEBUG] sentence_to_vec")
     sentence_set = []
     for i, sentence in enumerate(sentence_list):
-        if debug: print(f"Progress: {i}/{len(sentence_list)}", end="\r")
-        vs = np.zeros(embedding_size)  # add all word2vec values into one vector for the sentence
+        if debug:
+            print(f"Progress: {i}/{len(sentence_list)}", end="\r")
+        vs = np.zeros(
+            embedding_size
+        )  # add all word2vec values into one vector for the sentence
         sentence_length = sentence.len()
         for word in sentence.word_list:
-            a_value = a / (a + get_word_frequency(word.text))  # smooth inverse frequency, SIF
-            vs = np.add(vs, np.multiply(a_value, word.vector))  # vs += sif * word_vector
-
+            a_value = a / (
+                a + get_word_frequency(word.text)
+            )  # smooth inverse frequency, SIF
+            vs = np.add(
+                vs, np.multiply(a_value, word.vector)
+            )  # vs += sif * word_vector
         vs = np.divide(vs, sentence_length)  # weighted average
         sentence_set.append(vs)  # add to our existing re-calculated set of sentences
 
-    if debug: print()
+    sentence_set = np.array(sentence_set)
+    sentence_set = np.nan_to_num(sentence_set)
+
+    if debug:
+        print()
+
     # calculate PCA of this sentence set
-    if debug: print("[DEBUG] Compution PCA (1/3)")
+    if debug:
+        print("[DEBUG] Compution PCA (1/3)")
+
     pca = PCA(n_components=embedding_size)
     pca.fit(np.array(sentence_set))
     u = pca.components_[0]  # the PCA vector
     u = np.multiply(u, np.transpose(u))  # u x uT
 
     # pad the vector?  (occurs if we have less sentences than embeddings_size)
-    if debug: print("[DEBUG] Padding vector (2/3)")
+    if debug:
+        print("[DEBUG] Padding vector (2/3)")
+
     if len(u) < embedding_size:
         for _ in range(embedding_size - len(u)):
             u = np.append(u, 0)  # add needed extension for multiplication below
 
-    # resulting sentence vectors, vs = vs -u x uT x vs
-    if debug: print("[DEBUG] Building final vectors (3/3)")
-    sentence_vecs = []
-    for vs in sentence_set:
-        sub = np.multiply(u, vs)
-        sentence_vecs.append(np.subtract(vs, sub))
+    if debug:
+        print("[DEBUG] Building final vectors (3/3)")
 
+    # resulting sentence vectors, vs = vs -u x uT x vs
+    sentence_vecs = sentence_set - (u * sentence_set)
     return sentence_vecs
