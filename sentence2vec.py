@@ -61,19 +61,15 @@ def sentence_to_vec(
     for i, sentence in enumerate(sentence_list):
         if debug:
             print(f"Progress: {i}/{len(sentence_list)}", end="\r")
-
         vs = np.zeros(
             embedding_size
         )  # add all word2vec values into one vector for the sentence
         sentence_length = sentence.len()
-
         for word in sentence.word_list:
             a_value = a / (
                 a + get_word_frequency(word.text)
             )  # smooth inverse frequency, SIF
-            vs = np.add(
-                vs, np.multiply(a_value, word.vector)
-            )  # vs += sif * word_vector
+            vs += a_value * word.vector  # vs += sif * word_vector
         vs /= sentence_length  # weighted average
         sentence_set.append(vs)  # add to our existing re-calculated set of sentences
 
